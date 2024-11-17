@@ -1,9 +1,8 @@
 const { createProvider, isProviderConnected } = require('./tools/provider/provider');
-const { decodeTransactionData } = require('./tools/decode/decode');
+const { decodeTxInputData } = require('./tools/decode/decode');
 
-module.exports =
-{
-    createProvider, isProviderConnected,
-    
-    decodeTransactionData
+module.exports = {
+  createProvider,
+  isProviderConnected,
+  decodeTxInputData,
 };

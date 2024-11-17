@@ -1,6 +1,5 @@
-const { decodeTransactionData } = require('./decodeTransactionData');
+const { decodeTxInputData } = require('./decodeTxInputData');
 
-module.exports =
-{
-    decodeTransactionData
-}
+module.exports = {
+  decodeTxInputData,
+};

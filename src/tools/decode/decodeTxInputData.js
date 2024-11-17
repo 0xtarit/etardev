@@ -6,8 +6,7 @@ const { ethers } = require('ethers');
  * @param {string} data - The transaction data in hexadecimal.
  * @returns {Object|null} The decoded data or null if no matching function found.
  */
-function decodeTransactionData(abi, data) {
-
+function decodeTxInputData(abi, data) {
   if (!abi || !Array.isArray(abi)) {
     throw new Error('Invalid ABI: Must be a valid array.');
   }
@@ -39,18 +38,18 @@ function decodeTransactionData(abi, data) {
           functionName,
           decodedData: result,
         };
-
       } catch {
         // Ignore errors for non-matching functions
       }
     }
 
-    return { status:false,data:"The ABI and the hex data string do not match." }; // No matching function found
-
+    return {
+      status: false,
+      data: 'The ABI and the hex data string do not match.',
+    }; // No matching function found
   } catch (error) {
     throw new Error('Invalid ABI: Must be a valid array.');
   }
-
 }
 
-module.exports = { decodeTransactionData };
+module.exports = { decodeTxInputData };

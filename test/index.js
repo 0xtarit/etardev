@@ -404,7 +404,7 @@ async function test(){
       },
     ];
     let data = '0x095ea7b3000000000000000000000000e49f8facd7b53ce69e5db428bfb4502b70846ff20000000000000000000000000000000000000000000000000000000000000000';
-    let result  = await etardev.decodeTransactionData(abi,data);
+    let result = await etardev.decodeTxInputData(abi, data);
 
     console.log(result);
 }
