@@ -8,3 +8,4 @@
 2. **isProviderConnected** : `Checks if the provider is connected to the network.`
 3. **decodeTxInputData** : `Decodes the input data of a transaction into a readable format using the ABI.`
 4. **validateAddress** : `Validates whether a given string is a valid EVM address.`
+5. **validateEnvVariables** : `Validates the presence and format of required variables in a .env file to ensure proper application configuration.`

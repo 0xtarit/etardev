@@ -1,3 +1,4 @@
 const { validateAddress } = require('./validateAddress');
+const { validateEnvVariables } = require('./validateEnvVariables');
 
-module.exports = {validateAddress};
+module.exports = { validateAddress, validateEnvVariables };
