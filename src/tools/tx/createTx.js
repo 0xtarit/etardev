@@ -48,14 +48,32 @@ function createTx(txDetails) {
   }
 
   // check to and from address
-  for (const param of ["to", "from"]) {
+  for (const param of ["to"]) {
     try {
-      if (!validateAddress(txDetails[param])?.isValid) {
+
+      if (!validateAddress(txDetails[param])?.isValid ) {
         return { isValid: false, message: `Invalid input: Please provide a valid '${param}' address.` };
       }
+
     } catch (error) {
       return { isValid: false, message: `Error validating '${param}' address: ${error.message}` };
     }
+  }
+
+  if (checkParameter(txDetails.from)) {
+      try {
+        if (!validateAddress(txDetails[param])?.isValid) {
+          return {
+            isValid: false,
+            message: `Invalid input: Please provide a valid 'from' address.`,
+          };
+        }
+      } catch (error) {
+        return {
+          isValid: false,
+          message: `Error validating 'from' address: ${error.message}`,
+        };
+      }
   }
 
   // Handle "data" and ABI encoding
