@@ -4,7 +4,7 @@ const etadev = require('../index')
 
 
 function test(){
-  let tx = etadev.createTx({
+  let tx = etadev.createContractTx({
     data: {
       function: 'approve',
       parameters: [

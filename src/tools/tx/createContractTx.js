@@ -2,7 +2,7 @@ const { ethers } = require('ethers');
 const convert = require('../read/convert');
 const { validateAddress } = require('../read/validateAddress')
 
-function createTx(txDetails) {
+function createContractTx(txDetails) {
   // Define required parameters and utility functions
   const REQUIRED_PARAMETERS = [
     "to", "data", "abi", "gasPrice", "gasLimit",
@@ -118,4 +118,4 @@ function createTx(txDetails) {
   return txObject;
 }
 
-module.exports = { createTx };
+module.exports = { createContractTx };

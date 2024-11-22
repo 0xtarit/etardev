@@ -1,3 +1,3 @@
-const { createTx } = require('./createTx');
+const { createContractTx } = require('./createContractTx');
 
-module.exports = { createTx };
+module.exports = { createContractTx };
