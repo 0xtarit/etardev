@@ -11,6 +11,8 @@ const {
   weiToGwei
 } = require('./tools/read/read');
 
+const { createTx } = require('./tools/tx/tx');
+
 module.exports = {
   createProvider,
   isProviderConnected,
@@ -23,4 +25,5 @@ module.exports = {
   gweiToWei,
   weiToEth,
   weiToGwei,
+  createTx,
 };
