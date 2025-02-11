@@ -22,17 +22,24 @@ const checkRpcUrlProtocol = async (_rpcUrl: string): Promise<responseRpcUrlType>
     if (protocolType.includes(protocol)) {
       
       try {
+        
+        const payload = {
+          method: "eth_blockNumber",
+          params: [],
+        };
+
         const response = await fetch(_rpcUrl, {
           method: "POST",
-          body: "{}",
+          body: JSON.stringify(payload),
           headers: { "Content-Type": "application/json" },
         });
 
         if (response.status === 200) {
           return { status: true, message: "RPC URL is valid and accessible.", rpcProtocolType: protocol };
         } else {
-          return { status: false, message: `RPC URL responded with status: ${response.status}` };
+          return { status: false, message: `RPC URL not responded with status: ${response.status}` };
         }
+
       } catch (fetchError) {
         return { status: false, message: "RPC URL is not reachable." };
       }
