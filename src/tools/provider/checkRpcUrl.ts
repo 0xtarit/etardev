@@ -60,7 +60,7 @@ const checkRpcUrl = async ( _url: string, _blockRequest?: boolean ): Promise<res
 
   if (protocolResult.status) {
     if (_blockRequest) {
-      let providerResult = await createProvider(_url, true);
+      let providerResult = await createProvider(_url);
 
       if (providerResult.status) {
         return { status: true, provider: providerResult.provider, message: providerResult.message,};

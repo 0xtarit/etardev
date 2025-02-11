@@ -52,7 +52,7 @@ const setProvider = async ( _rpcUrl: string, _rpcUrlType: string ): Promise<resp
 };
 
 // Function to create and validate a provider
-const createProvider = async ( _providerRpcUrl: string, _checkProviderRpcUrl?: boolean): Promise<responseRpcUrlType> => {
+const createProvider = async ( _providerRpcUrl: string): Promise<responseRpcUrlType> => {
   let checkRpcUrlProtocolResult: responseRpcUrlType = await checkRpcUrlProtocol(_providerRpcUrl);
 
   if (checkRpcUrlProtocolResult.status) {
