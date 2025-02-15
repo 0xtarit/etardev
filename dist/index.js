@@ -7,8 +7,11 @@ var __export = (target, all) => {
 // src/etardev.ts
 var etardev_exports = {};
 __export(etardev_exports, {
+  checkMnemonic: () => checkMnemonic,
+  checkPrivatekey: () => checkPrivatekey,
   checkRpcUrl: () => checkRpcUrl,
-  createProvider: () => createProvider
+  createProvider: () => createProvider,
+  createWallet: () => createWallet
 });
 
 // src/tools/provider/createProvider.ts
@@ -53,7 +56,7 @@ var checkRpcUrl = async (_url, _blockRequest) => {
   let protocolResult = await checkRpcUrlProtocol(rpcUrl);
   if (protocolResult.status) {
     if (_blockRequest) {
-      let providerResult = await createProvider(_url, true);
+      let providerResult = await createProvider(_url);
       if (providerResult.status) {
         return { status: true, provider: providerResult.provider, message: providerResult.message };
       } else {
@@ -100,7 +103,7 @@ var setProvider2 = async (_rpcUrl, _rpcUrlType) => {
     return { status: false, message: `Error creating provider: ${error.message}` };
   }
 };
-var createProvider = async (_providerRpcUrl, _checkProviderRpcUrl) => {
+var createProvider = async (_providerRpcUrl) => {
   let checkRpcUrlProtocolResult = await checkRpcUrlProtocol(_providerRpcUrl);
   if (checkRpcUrlProtocolResult.status) {
     const rpcProtocolType_result = checkRpcUrlProtocolResult.rpcProtocolType;
@@ -117,8 +120,59 @@ var createProvider = async (_providerRpcUrl, _checkProviderRpcUrl) => {
     return checkRpcUrlProtocolResult;
   }
 };
+
+// src/tools/wallet/checkMnemonic.ts
+import { Mnemonic } from "ethers";
+var checkMnemonic = (_mnemonic) => {
+  try {
+    const checkMnemonicResult = Mnemonic.isValidMnemonic(_mnemonic);
+    if (checkMnemonicResult) {
+      return { status: checkMnemonicResult, message: "Valid Mnemonic" };
+    } else {
+      return { status: checkMnemonicResult, message: "inValid Mnemonic" };
+    }
+  } catch (error) {
+    return { status: false, message: "inValid Mnemonic" };
+  }
+};
+
+// src/tools/wallet/checkPrivatekey.ts
+import ethers3 from "ethers";
+var checkPrivatekey = (_privateKey) => {
+  try {
+    const wallets = new ethers3.Wallet(_privateKey);
+    return { status: true, message: "Valid PrivateKey" };
+  } catch (error) {
+    return { status: false, message: "inValid PrivateKey" };
+  }
+};
+
+// src/tools/wallet/createWallet.ts
+import { ethers as ethers4 } from "ethers";
+var createWallet = (_mnemonicOrPrivatekey, _walletCount = 1) => {
+  try {
+    if (checkMnemonic(_mnemonicOrPrivatekey).status) {
+      const wallets = [];
+      for (let i = 0; i < _walletCount; i++) {
+        const hdWallet = ethers4.HDNodeWallet.fromMnemonic(ethers4.Mnemonic.fromPhrase(_mnemonicOrPrivatekey), `m/44'/60'/0'/0/${i}`);
+        wallets.push(hdWallet);
+      }
+      return { status: true, message: `Wallet(s) created successfully from mnemonic.`, wallets };
+    } else if (checkPrivatekey(_mnemonicOrPrivatekey).status) {
+      const wallets = [new ethers4.Wallet(_mnemonicOrPrivatekey)];
+      return { status: true, message: `Wallet created successfully from private key.`, wallets };
+    } else {
+      return { status: false, message: `Invalid mnemonic or private key provided.` };
+    }
+  } catch (error) {
+    return { status: false, message: `Error: ${error.message}` };
+  }
+};
 export {
+  checkMnemonic,
+  checkPrivatekey,
   checkRpcUrl,
   createProvider,
+  createWallet,
   etardev_exports as etardev
 };

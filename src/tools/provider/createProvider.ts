@@ -1,15 +1,10 @@
-import { ethers } from "ethers";
+import { ethers , Provider} from "ethers";
 import { checkRpcUrlProtocol } from "./checkRpcUrl";
+import { responseType } from "../import/responseType";
 
-type responseRpcUrlType = {
-  status: boolean;
-  message: string;
-  rpcProtocolType?: string;
-  provider?: ethers.Provider;
-};
 
 // Async function to create a provider and validate its response
-const setProvider = async ( _rpcUrl: string, _rpcUrlType: string ): Promise<responseRpcUrlType> => {
+const setProvider = async ( _rpcUrl: string, _rpcUrlType: string ): Promise<responseType> => {
   let rpcUrlProtocolType = _rpcUrlType;
   let _providerRpcUrl = _rpcUrl;
 
@@ -25,24 +20,24 @@ const setProvider = async ( _rpcUrl: string, _rpcUrlType: string ): Promise<resp
       return { status: false, message: "Unsupported protocol type." };
     }
 
-    // 🔥 First, check if provider can detect network
+    // First, check if provider can detect network
     try {
       const network = await provider.getNetwork();
-      console.log(`✅ Connected to network: ${network.name} (chainId: ${network.chainId})`);
+      console.log(`Connected to network: ${network.name} (chainId: ${network.chainId})`);
     } catch (error: any) {
-      return { status: false, message: `❌ Invalid network: ${error.message}` };
+      return { status: false, message: `Invalid network: ${error.message}` };
     }
 
     // Verify if provider works by fetching the block number
     try {
+
       const blockNumber = await provider.getBlockNumber();
-      if (blockNumber && Number(blockNumber) > 0) {
-        return { status: true, message: `Provider created. Latest Block Number: ${blockNumber}`, provider: provider, };
-      } else {
-        return { status: false, message: "RPC Url is invalid for block request.",};
-      }
+      return blockNumber && Number(blockNumber) > 0
+        ? { status: true, message: `Provider created. Latest Block Number: ${blockNumber}`, provider }
+        : { status: false, message: "RPC Url is invalid for block request." };
+
     } catch (error: any) {
-      return { status: false, message: `Error creating provider: ${error.message}`,};
+      return { status: false, message: `Error fetching blocknumber: ${error.message}`,};
     }
 
   } catch (error: any) {
@@ -52,26 +47,25 @@ const setProvider = async ( _rpcUrl: string, _rpcUrlType: string ): Promise<resp
 };
 
 // Function to create and validate a provider
-const createProvider = async ( _providerRpcUrl: string): Promise<responseRpcUrlType> => {
-  let checkRpcUrlProtocolResult: responseRpcUrlType = await checkRpcUrlProtocol(_providerRpcUrl);
+const createProvider = async ( _providerRpcUrl: string): Promise<responseType> => {
+  let checkRpcUrlProtocolResult: responseType = await checkRpcUrlProtocol(_providerRpcUrl);
 
-  if (checkRpcUrlProtocolResult.status) {
-    const rpcProtocolType_result = checkRpcUrlProtocolResult.rpcProtocolType;
+  if (!checkRpcUrlProtocolResult.status) return checkRpcUrlProtocolResult;
 
-    if (!rpcProtocolType_result) {
-      return { status: false, message: "RPC protocol type is undefined." };
-    }
+  const rpcProtocolType_result = checkRpcUrlProtocolResult.rpcProtocolType;
 
-    let setProviderResult: responseRpcUrlType = await setProvider(_providerRpcUrl,rpcProtocolType_result);
-
-    if (setProviderResult.status) {
-      return setProviderResult;
-    } else {
-      return { status: false, message: "Failed to create provider." };
-    }
-  } else {
-    return checkRpcUrlProtocolResult;
+  if (!rpcProtocolType_result) {
+    return { status: false, message: "RPC protocol type is undefined." };
   }
+
+  let setProviderResult: responseType = await setProvider(_providerRpcUrl,rpcProtocolType_result);
+
+  if (setProviderResult.status) {
+    return setProviderResult;
+  } else {
+    return { status: false, message: "Failed to create provider." };
+  }
+
 };
 
 export { createProvider , setProvider};

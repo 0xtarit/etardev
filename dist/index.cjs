@@ -1,7 +1,9 @@
 "use strict";
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -15,13 +17,24 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // index.ts
 var index_exports = {};
 __export(index_exports, {
+  checkMnemonic: () => checkMnemonic,
+  checkPrivatekey: () => checkPrivatekey,
   checkRpcUrl: () => checkRpcUrl,
   createProvider: () => createProvider,
+  createWallet: () => createWallet,
   etardev: () => etardev_exports
 });
 module.exports = __toCommonJS(index_exports);
@@ -29,8 +42,11 @@ module.exports = __toCommonJS(index_exports);
 // src/etardev.ts
 var etardev_exports = {};
 __export(etardev_exports, {
+  checkMnemonic: () => checkMnemonic,
+  checkPrivatekey: () => checkPrivatekey,
   checkRpcUrl: () => checkRpcUrl,
-  createProvider: () => createProvider
+  createProvider: () => createProvider,
+  createWallet: () => createWallet
 });
 
 // src/tools/provider/createProvider.ts
@@ -75,7 +91,7 @@ var checkRpcUrl = async (_url, _blockRequest) => {
   let protocolResult = await checkRpcUrlProtocol(rpcUrl);
   if (protocolResult.status) {
     if (_blockRequest) {
-      let providerResult = await createProvider(_url, true);
+      let providerResult = await createProvider(_url);
       if (providerResult.status) {
         return { status: true, provider: providerResult.provider, message: providerResult.message };
       } else {
@@ -122,7 +138,7 @@ var setProvider2 = async (_rpcUrl, _rpcUrlType) => {
     return { status: false, message: `Error creating provider: ${error.message}` };
   }
 };
-var createProvider = async (_providerRpcUrl, _checkProviderRpcUrl) => {
+var createProvider = async (_providerRpcUrl) => {
   let checkRpcUrlProtocolResult = await checkRpcUrlProtocol(_providerRpcUrl);
   if (checkRpcUrlProtocolResult.status) {
     const rpcProtocolType_result = checkRpcUrlProtocolResult.rpcProtocolType;
@@ -139,9 +155,60 @@ var createProvider = async (_providerRpcUrl, _checkProviderRpcUrl) => {
     return checkRpcUrlProtocolResult;
   }
 };
+
+// src/tools/wallet/checkMnemonic.ts
+var import_ethers2 = require("ethers");
+var checkMnemonic = (_mnemonic) => {
+  try {
+    const checkMnemonicResult = import_ethers2.Mnemonic.isValidMnemonic(_mnemonic);
+    if (checkMnemonicResult) {
+      return { status: checkMnemonicResult, message: "Valid Mnemonic" };
+    } else {
+      return { status: checkMnemonicResult, message: "inValid Mnemonic" };
+    }
+  } catch (error) {
+    return { status: false, message: "inValid Mnemonic" };
+  }
+};
+
+// src/tools/wallet/checkPrivatekey.ts
+var import_ethers3 = __toESM(require("ethers"), 1);
+var checkPrivatekey = (_privateKey) => {
+  try {
+    const wallets = new import_ethers3.default.Wallet(_privateKey);
+    return { status: true, message: "Valid PrivateKey" };
+  } catch (error) {
+    return { status: false, message: "inValid PrivateKey" };
+  }
+};
+
+// src/tools/wallet/createWallet.ts
+var import_ethers4 = require("ethers");
+var createWallet = (_mnemonicOrPrivatekey, _walletCount = 1) => {
+  try {
+    if (checkMnemonic(_mnemonicOrPrivatekey).status) {
+      const wallets = [];
+      for (let i = 0; i < _walletCount; i++) {
+        const hdWallet = import_ethers4.ethers.HDNodeWallet.fromMnemonic(import_ethers4.ethers.Mnemonic.fromPhrase(_mnemonicOrPrivatekey), `m/44'/60'/0'/0/${i}`);
+        wallets.push(hdWallet);
+      }
+      return { status: true, message: `Wallet(s) created successfully from mnemonic.`, wallets };
+    } else if (checkPrivatekey(_mnemonicOrPrivatekey).status) {
+      const wallets = [new import_ethers4.ethers.Wallet(_mnemonicOrPrivatekey)];
+      return { status: true, message: `Wallet created successfully from private key.`, wallets };
+    } else {
+      return { status: false, message: `Invalid mnemonic or private key provided.` };
+    }
+  } catch (error) {
+    return { status: false, message: `Error: ${error.message}` };
+  }
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  checkMnemonic,
+  checkPrivatekey,
   checkRpcUrl,
   createProvider,
+  createWallet,
   etardev
 });
