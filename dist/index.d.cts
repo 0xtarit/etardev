@@ -1,36 +1,21 @@
-import { ethers } from 'ethers';
-
-type responseRpcUrlType$1 = {
-    status: boolean;
-    message: string;
-    rpcProtocolType?: string;
-    provider?: ethers.Provider;
-};
-declare const createProvider: (_providerRpcUrl: string) => Promise<responseRpcUrlType$1>;
-
-type responseRpcUrlType = {
-    status: boolean;
-    message: string;
-    rpcProtocolType?: string;
-    provider?: ethers.Provider;
-};
-declare const checkRpcUrl: (_url: string, _blockRequest?: boolean) => Promise<responseRpcUrlType>;
-
-declare const checkMnemonic: (_mnemonic: string) => {
-    status: boolean;
-    message: string;
-};
-
-declare const checkPrivatekey: (_privateKey: string) => {
-    status: boolean;
-    message: string;
-};
+import { Provider, HDNodeWallet, Wallet } from 'ethers';
 
 type responseType = {
     status: boolean;
     message: string;
-    wallets?: ethers.HDNodeWallet[] | ethers.Wallet[];
+    rpcProtocolType?: string;
+    provider?: Provider;
+    wallets?: HDNodeWallet[] | Wallet[];
 };
+
+declare const createProvider: (_providerRpcUrl: string) => Promise<responseType>;
+
+declare const checkRpcUrl: (_url: string, validateDeep?: boolean) => Promise<responseType>;
+
+declare const checkMnemonic: (_mnemonic: string) => responseType;
+
+declare const checkPrivatekey: (_privateKey: string) => responseType;
+
 declare const createWallet: (_mnemonicOrPrivatekey: string, _walletCount?: number) => responseType;
 
 declare const etardev_checkMnemonic: typeof checkMnemonic;

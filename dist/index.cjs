@@ -53,60 +53,57 @@ __export(etardev_exports, {
 var import_ethers = require("ethers");
 
 // src/tools/provider/checkRpcUrl.ts
+var SUPPORTED_PROTOCOLS = /* @__PURE__ */ new Set(["wss", "https", "http"]);
 var checkRpcUrlProtocol = async (_rpcUrl) => {
   try {
-    const protocol = new URL(_rpcUrl).protocol;
+    const parsedUrl = new URL(_rpcUrl);
+    const protocol = parsedUrl.protocol.slice(0, -1);
     if (!protocol) {
       return { status: false, message: "Invalid RPC Url." };
     }
-    let protocolType = ["wss:", "https:", "http:"];
-    if (protocolType.includes(protocol)) {
-      try {
-        const payload = {
-          method: "eth_blockNumber",
-          params: []
-        };
-        const response = await fetch(_rpcUrl, {
-          method: "POST",
-          body: JSON.stringify(payload),
-          headers: { "Content-Type": "application/json" }
-        });
-        if (response.status === 200) {
-          return { status: true, message: "RPC URL is valid and accessible.", rpcProtocolType: protocol };
-        } else {
-          return { status: false, message: `RPC URL not responded with status: ${response.status}` };
-        }
-      } catch (fetchError) {
-        return { status: false, message: "RPC URL is not reachable." };
+    if (!SUPPORTED_PROTOCOLS.has(protocol)) {
+      return { status: false, message: `Unsupported protocol: ${protocol}` };
+    }
+    try {
+      const payload = {
+        method: "eth_blockNumber",
+        params: []
+      };
+      const response = await fetch(_rpcUrl, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(5e3)
+      });
+      if (response.status === 200) {
+        return { status: true, message: "RPC URL is valid and accessible.", rpcProtocolType: protocol };
+      } else {
+        return { status: false, message: `RPC URL not responded with status: ${response.status}` };
       }
-    } else {
-      return { status: false, message: "Protocol is invalid." };
+    } catch (fetchError) {
+      return { status: false, message: "RPC URL is not reachable." };
     }
   } catch (error) {
     return { status: false, message: "Invalid RPC Url." };
   }
 };
-var checkRpcUrl = async (_url, _blockRequest) => {
+var checkRpcUrl = async (_url, validateDeep) => {
   let rpcUrl = _url;
   let protocolResult = await checkRpcUrlProtocol(rpcUrl);
-  if (protocolResult.status) {
-    if (_blockRequest) {
-      let providerResult = await createProvider(_url);
-      if (providerResult.status) {
-        return { status: true, provider: providerResult.provider, message: providerResult.message };
-      } else {
-        return { status: false, message: "RPC Url is invalid for block request." };
-      }
-    } else {
-      return { status: true, message: "RPC Url is valid." };
+  if (!protocolResult.status) return protocolResult;
+  if (validateDeep) {
+    const providerResult = await createProvider(_url);
+    if (!providerResult.status) {
+      return { status: false, message: `RPC failed deep validation: ${providerResult.message}` };
     }
+    return providerResult;
   } else {
     return protocolResult;
   }
 };
 
 // src/tools/provider/createProvider.ts
-var setProvider2 = async (_rpcUrl, _rpcUrlType) => {
+var setProvider = async (_rpcUrl, _rpcUrlType) => {
   let rpcUrlProtocolType = _rpcUrlType;
   let _providerRpcUrl = _rpcUrl;
   let provider = null;
@@ -120,19 +117,15 @@ var setProvider2 = async (_rpcUrl, _rpcUrlType) => {
     }
     try {
       const network = await provider.getNetwork();
-      console.log(`\u2705 Connected to network: ${network.name} (chainId: ${network.chainId})`);
+      console.log(`Connected to network: ${network.name} (chainId: ${network.chainId})`);
     } catch (error) {
-      return { status: false, message: `\u274C Invalid network: ${error.message}` };
+      return { status: false, message: `Invalid network: ${error.message}` };
     }
     try {
       const blockNumber = await provider.getBlockNumber();
-      if (blockNumber && Number(blockNumber) > 0) {
-        return { status: true, message: `Provider created. Latest Block Number: ${blockNumber}`, provider };
-      } else {
-        return { status: false, message: "RPC Url is invalid for block request." };
-      }
+      return blockNumber && Number(blockNumber) > 0 ? { status: true, message: `Provider created. Latest Block Number: ${blockNumber}`, provider } : { status: false, message: "RPC Url is invalid for block request." };
     } catch (error) {
-      return { status: false, message: `Error creating provider: ${error.message}` };
+      return { status: false, message: `Error fetching blocknumber: ${error.message}` };
     }
   } catch (error) {
     return { status: false, message: `Error creating provider: ${error.message}` };
@@ -140,19 +133,16 @@ var setProvider2 = async (_rpcUrl, _rpcUrlType) => {
 };
 var createProvider = async (_providerRpcUrl) => {
   let checkRpcUrlProtocolResult = await checkRpcUrlProtocol(_providerRpcUrl);
-  if (checkRpcUrlProtocolResult.status) {
-    const rpcProtocolType_result = checkRpcUrlProtocolResult.rpcProtocolType;
-    if (!rpcProtocolType_result) {
-      return { status: false, message: "RPC protocol type is undefined." };
-    }
-    let setProviderResult = await setProvider2(_providerRpcUrl, rpcProtocolType_result);
-    if (setProviderResult.status) {
-      return setProviderResult;
-    } else {
-      return { status: false, message: "Failed to create provider." };
-    }
+  if (!checkRpcUrlProtocolResult.status) return checkRpcUrlProtocolResult;
+  const rpcProtocolType_result = checkRpcUrlProtocolResult.rpcProtocolType;
+  if (!rpcProtocolType_result) {
+    return { status: false, message: "RPC protocol type is undefined." };
+  }
+  let setProviderResult = await setProvider(_providerRpcUrl, rpcProtocolType_result);
+  if (setProviderResult.status) {
+    return setProviderResult;
   } else {
-    return checkRpcUrlProtocolResult;
+    return { status: false, message: "Failed to create provider." };
   }
 };
 
@@ -160,12 +150,11 @@ var createProvider = async (_providerRpcUrl) => {
 var import_ethers2 = require("ethers");
 var checkMnemonic = (_mnemonic) => {
   try {
-    const checkMnemonicResult = import_ethers2.Mnemonic.isValidMnemonic(_mnemonic);
-    if (checkMnemonicResult) {
-      return { status: checkMnemonicResult, message: "Valid Mnemonic" };
-    } else {
-      return { status: checkMnemonicResult, message: "inValid Mnemonic" };
-    }
+    const isValid = import_ethers2.Mnemonic.isValidMnemonic(_mnemonic);
+    return {
+      status: isValid,
+      message: isValid ? "Valid Mnemonic" : "Invalid Mnemonic"
+    };
   } catch (error) {
     return { status: false, message: "inValid Mnemonic" };
   }
@@ -175,7 +164,7 @@ var checkMnemonic = (_mnemonic) => {
 var import_ethers3 = __toESM(require("ethers"), 1);
 var checkPrivatekey = (_privateKey) => {
   try {
-    const wallets = new import_ethers3.default.Wallet(_privateKey);
+    new import_ethers3.default.Wallet(_privateKey);
     return { status: true, message: "Valid PrivateKey" };
   } catch (error) {
     return { status: false, message: "inValid PrivateKey" };
@@ -188,13 +177,16 @@ var createWallet = (_mnemonicOrPrivatekey, _walletCount = 1) => {
   try {
     if (checkMnemonic(_mnemonicOrPrivatekey).status) {
       const wallets = [];
+      if (_walletCount < 1 || !Number.isInteger(_walletCount)) {
+        _walletCount = 1;
+      }
       for (let i = 0; i < _walletCount; i++) {
-        const hdWallet = import_ethers4.ethers.HDNodeWallet.fromMnemonic(import_ethers4.ethers.Mnemonic.fromPhrase(_mnemonicOrPrivatekey), `m/44'/60'/0'/0/${i}`);
+        const hdWallet = import_ethers4.HDNodeWallet.fromMnemonic(import_ethers4.Mnemonic.fromPhrase(_mnemonicOrPrivatekey), `m/44'/60'/0'/0/${i}`);
         wallets.push(hdWallet);
       }
       return { status: true, message: `Wallet(s) created successfully from mnemonic.`, wallets };
     } else if (checkPrivatekey(_mnemonicOrPrivatekey).status) {
-      const wallets = [new import_ethers4.ethers.Wallet(_mnemonicOrPrivatekey)];
+      const wallets = [new import_ethers4.Wallet(_mnemonicOrPrivatekey)];
       return { status: true, message: `Wallet created successfully from private key.`, wallets };
     } else {
       return { status: false, message: `Invalid mnemonic or private key provided.` };
