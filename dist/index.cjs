@@ -30,11 +30,13 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // index.ts
 var index_exports = {};
 __export(index_exports, {
+  checkABI: () => checkABI,
   checkMnemonic: () => checkMnemonic,
   checkPrivatekey: () => checkPrivatekey,
   checkRpcUrl: () => checkRpcUrl,
   createProvider: () => createProvider,
   createWallet: () => createWallet,
+  decodeTxInputData: () => decodeTxInputData,
   etardev: () => etardev_exports
 });
 module.exports = __toCommonJS(index_exports);
@@ -42,11 +44,13 @@ module.exports = __toCommonJS(index_exports);
 // src/etardev.ts
 var etardev_exports = {};
 __export(etardev_exports, {
+  checkABI: () => checkABI,
   checkMnemonic: () => checkMnemonic,
   checkPrivatekey: () => checkPrivatekey,
   checkRpcUrl: () => checkRpcUrl,
   createProvider: () => createProvider,
-  createWallet: () => createWallet
+  createWallet: () => createWallet,
+  decodeTxInputData: () => decodeTxInputData
 });
 
 // src/tools/provider/createProvider.ts
@@ -195,12 +199,79 @@ var createWallet = (_mnemonicOrPrivatekey, _walletCount = 1) => {
     return { status: false, message: `Error: ${error.message}` };
   }
 };
+
+// src/tools/transaction/decodeTxInputData.ts
+var import_ethers6 = require("ethers");
+
+// src/tools/transaction/checkAbi.ts
+var import_ethers5 = require("ethers");
+function checkABI(abi) {
+  try {
+    if (!Array.isArray(abi) || abi.length === 0) {
+      return { status: false, message: "Invalid ABI: Must be a valid array" };
+    }
+    new import_ethers5.Interface(abi);
+    return { status: true, message: "Valid ABI." };
+  } catch (error) {
+    return { status: false, message: "Invalid ABI" };
+  }
+}
+
+// src/tools/transaction/decodeTxInputData.ts
+function decodeTxInputData(abi, data) {
+  let abivalidate = checkABI(abi);
+  if (!abivalidate.status) {
+    return abivalidate;
+  }
+  if (!data || typeof data !== "string" || !(0, import_ethers6.isHexString)(data)) {
+    return { status: false, message: `Invalid data: Must be a hexadecimal string` };
+  }
+  try {
+    const iface = new import_ethers6.Interface(abi);
+    const parsedTx = iface.parseTransaction({ data });
+    if (!parsedTx) {
+      return { status: false, message: "No matching function found in ABI" };
+    }
+    const { fragment, args } = parsedTx;
+    const decodedData = [];
+    fragment.inputs.forEach((input, index) => {
+      decodedData.push({
+        Name: input.name,
+        Type: input.type,
+        Data: formatValue(input, args[index])
+      });
+    });
+    return { status: true, message: { functionName: fragment.name, signature: fragment.format(), data: decodedData } };
+  } catch (error) {
+    return { status: false, message: "Unknown error occurred during decoding" };
+  }
+}
+function formatValue(param, value) {
+  if (param.type === "address") {
+    return import_ethers6.ethers.getAddress(value.toLowerCase());
+  }
+  if (param.type.startsWith("uint") || param.type.startsWith("int")) {
+    return value.toString();
+  }
+  if (param.type === "tuple" && param.components) {
+    return param.components.reduce(
+      (acc, component, index) => {
+        acc[component.name] = formatValue(component, value[index]);
+        return acc;
+      },
+      {}
+    );
+  }
+  return value;
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  checkABI,
   checkMnemonic,
   checkPrivatekey,
   checkRpcUrl,
   createProvider,
   createWallet,
+  decodeTxInputData,
   etardev
 });

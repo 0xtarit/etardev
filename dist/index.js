@@ -7,11 +7,13 @@ var __export = (target, all) => {
 // src/etardev.ts
 var etardev_exports = {};
 __export(etardev_exports, {
+  checkABI: () => checkABI,
   checkMnemonic: () => checkMnemonic,
   checkPrivatekey: () => checkPrivatekey,
   checkRpcUrl: () => checkRpcUrl,
   createProvider: () => createProvider,
-  createWallet: () => createWallet
+  createWallet: () => createWallet,
+  decodeTxInputData: () => decodeTxInputData
 });
 
 // src/tools/provider/createProvider.ts
@@ -160,11 +162,78 @@ var createWallet = (_mnemonicOrPrivatekey, _walletCount = 1) => {
     return { status: false, message: `Error: ${error.message}` };
   }
 };
+
+// src/tools/transaction/decodeTxInputData.ts
+import { ethers as ethers5, Interface as Interface2, isHexString } from "ethers";
+
+// src/tools/transaction/checkAbi.ts
+import { Interface } from "ethers";
+function checkABI(abi) {
+  try {
+    if (!Array.isArray(abi) || abi.length === 0) {
+      return { status: false, message: "Invalid ABI: Must be a valid array" };
+    }
+    new Interface(abi);
+    return { status: true, message: "Valid ABI." };
+  } catch (error) {
+    return { status: false, message: "Invalid ABI" };
+  }
+}
+
+// src/tools/transaction/decodeTxInputData.ts
+function decodeTxInputData(abi, data) {
+  let abivalidate = checkABI(abi);
+  if (!abivalidate.status) {
+    return abivalidate;
+  }
+  if (!data || typeof data !== "string" || !isHexString(data)) {
+    return { status: false, message: `Invalid data: Must be a hexadecimal string` };
+  }
+  try {
+    const iface = new Interface2(abi);
+    const parsedTx = iface.parseTransaction({ data });
+    if (!parsedTx) {
+      return { status: false, message: "No matching function found in ABI" };
+    }
+    const { fragment, args } = parsedTx;
+    const decodedData = [];
+    fragment.inputs.forEach((input, index) => {
+      decodedData.push({
+        Name: input.name,
+        Type: input.type,
+        Data: formatValue(input, args[index])
+      });
+    });
+    return { status: true, message: { functionName: fragment.name, signature: fragment.format(), data: decodedData } };
+  } catch (error) {
+    return { status: false, message: "Unknown error occurred during decoding" };
+  }
+}
+function formatValue(param, value) {
+  if (param.type === "address") {
+    return ethers5.getAddress(value.toLowerCase());
+  }
+  if (param.type.startsWith("uint") || param.type.startsWith("int")) {
+    return value.toString();
+  }
+  if (param.type === "tuple" && param.components) {
+    return param.components.reduce(
+      (acc, component, index) => {
+        acc[component.name] = formatValue(component, value[index]);
+        return acc;
+      },
+      {}
+    );
+  }
+  return value;
+}
 export {
+  checkABI,
   checkMnemonic,
   checkPrivatekey,
   checkRpcUrl,
   createProvider,
   createWallet,
+  decodeTxInputData,
   etardev_exports as etardev
 };
