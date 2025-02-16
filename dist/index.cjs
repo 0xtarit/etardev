@@ -238,7 +238,7 @@ function decodeTxInputData(abi, data) {
       decodedData.push({
         Name: input.name,
         Type: input.type,
-        Data: formatValue(input, args[index])
+        Value: formatValue(input, args[index])
       });
     });
     return { status: true, message: { functionName: fragment.name, signature: fragment.format(), data: decodedData } };

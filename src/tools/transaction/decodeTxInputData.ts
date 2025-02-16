@@ -23,13 +23,13 @@ function decodeTxInputData(abi: any, data: string): responseType {
     }
 
     const { fragment, args } = parsedTx;
-    const decodedData: { Name: string; Type: string; Data: any }[] = [];
+    const decodedData: { Name: string; Type: string; Value: any }[] = [];
 
     fragment.inputs.forEach((input: ParamType, index: number) => {
       decodedData.push({
         Name: input.name,
         Type: input.type,
-        Data: formatValue(input, args[index]),
+        Value: formatValue(input, args[index]),
       });
     });
 
@@ -64,4 +64,4 @@ function formatValue(param: ParamType, value: any): any {
   
 }
 
-export { decodeTxInputData };
+export { decodeTxInputData } 
