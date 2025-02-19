@@ -22,6 +22,32 @@ declare function decodeTxInputData(abi: any, data: string): responseType;
 
 declare function checkABI(abi: any): responseType;
 
+type BigNumberish = string | number | bigint;
+/**
+ * Converts ETH to GWEI.
+ */
+declare const ethToGwei: (eth: BigNumberish) => string;
+/**
+ * Converts ETH to WEI.
+ */
+declare const ethToWei: (eth: BigNumberish) => string;
+/**
+ * Converts GWEI to ETH.
+ */
+declare const gweiToEth: (gwei: BigNumberish) => string;
+/**
+ * Converts GWEI to WEI.
+ */
+declare const gweiToWei: (gwei: BigNumberish) => string;
+/**
+ * Converts WEI to ETH.
+ */
+declare const weiToEth: (wei: BigNumberish) => string;
+/**
+ * Converts WEI to GWEI.
+ */
+declare const weiToGwei: (wei: BigNumberish) => string;
+
 declare const etardev_checkABI: typeof checkABI;
 declare const etardev_checkMnemonic: typeof checkMnemonic;
 declare const etardev_checkPrivatekey: typeof checkPrivatekey;
@@ -29,8 +55,14 @@ declare const etardev_checkRpcUrl: typeof checkRpcUrl;
 declare const etardev_createProvider: typeof createProvider;
 declare const etardev_createWallet: typeof createWallet;
 declare const etardev_decodeTxInputData: typeof decodeTxInputData;
+declare const etardev_ethToGwei: typeof ethToGwei;
+declare const etardev_ethToWei: typeof ethToWei;
+declare const etardev_gweiToEth: typeof gweiToEth;
+declare const etardev_gweiToWei: typeof gweiToWei;
+declare const etardev_weiToEth: typeof weiToEth;
+declare const etardev_weiToGwei: typeof weiToGwei;
 declare namespace etardev {
-  export { etardev_checkABI as checkABI, etardev_checkMnemonic as checkMnemonic, etardev_checkPrivatekey as checkPrivatekey, etardev_checkRpcUrl as checkRpcUrl, etardev_createProvider as createProvider, etardev_createWallet as createWallet, etardev_decodeTxInputData as decodeTxInputData };
+  export { etardev_checkABI as checkABI, etardev_checkMnemonic as checkMnemonic, etardev_checkPrivatekey as checkPrivatekey, etardev_checkRpcUrl as checkRpcUrl, etardev_createProvider as createProvider, etardev_createWallet as createWallet, etardev_decodeTxInputData as decodeTxInputData, etardev_ethToGwei as ethToGwei, etardev_ethToWei as ethToWei, etardev_gweiToEth as gweiToEth, etardev_gweiToWei as gweiToWei, etardev_weiToEth as weiToEth, etardev_weiToGwei as weiToGwei };
 }
 
-export { checkABI, checkMnemonic, checkPrivatekey, checkRpcUrl, createProvider, createWallet, decodeTxInputData, etardev };
+export { checkABI, checkMnemonic, checkPrivatekey, checkRpcUrl, createProvider, createWallet, decodeTxInputData, etardev, ethToGwei, ethToWei, gweiToEth, gweiToWei, weiToEth, weiToGwei };

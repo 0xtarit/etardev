@@ -13,7 +13,13 @@ __export(etardev_exports, {
   checkRpcUrl: () => checkRpcUrl,
   createProvider: () => createProvider,
   createWallet: () => createWallet,
-  decodeTxInputData: () => decodeTxInputData
+  decodeTxInputData: () => decodeTxInputData,
+  ethToGwei: () => ethToGwei,
+  ethToWei: () => ethToWei,
+  gweiToEth: () => gweiToEth,
+  gweiToWei: () => gweiToWei,
+  weiToEth: () => weiToEth,
+  weiToGwei: () => weiToGwei
 });
 
 // src/tools/provider/createProvider.ts
@@ -227,6 +233,51 @@ function formatValue(param, value) {
   }
   return value;
 }
+
+// src/tools/convert/ethConvert.ts
+import { ethers as ethers6 } from "ethers";
+var ethToGwei = (eth) => {
+  try {
+    return ethers6.parseUnits(eth.toString(), "gwei").toString();
+  } catch (error) {
+    return "Error converting ETH to GWEI";
+  }
+};
+var ethToWei = (eth) => {
+  try {
+    return ethers6.parseEther(eth.toString()).toString();
+  } catch (error) {
+    return "Error converting ETH to WEI";
+  }
+};
+var gweiToEth = (gwei) => {
+  try {
+    return ethers6.formatUnits(gwei.toString(), "gwei");
+  } catch (error) {
+    return "Error converting GWEI to ETH";
+  }
+};
+var gweiToWei = (gwei) => {
+  try {
+    return ethers6.parseUnits(gwei.toString(), "gwei").toString();
+  } catch (error) {
+    return "Error converting GWEI to WEI";
+  }
+};
+var weiToEth = (wei) => {
+  try {
+    return ethers6.formatUnits(wei.toString(), "ether");
+  } catch (error) {
+    return "Error converting WEI to ETH";
+  }
+};
+var weiToGwei = (wei) => {
+  try {
+    return ethers6.formatUnits(wei.toString(), "gwei");
+  } catch (error) {
+    return "Error converting WEI to GWEI";
+  }
+};
 export {
   checkABI,
   checkMnemonic,
@@ -235,5 +286,11 @@ export {
   createProvider,
   createWallet,
   decodeTxInputData,
-  etardev_exports as etardev
+  etardev_exports as etardev,
+  ethToGwei,
+  ethToWei,
+  gweiToEth,
+  gweiToWei,
+  weiToEth,
+  weiToGwei
 };

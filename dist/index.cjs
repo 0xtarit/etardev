@@ -37,7 +37,13 @@ __export(index_exports, {
   createProvider: () => createProvider,
   createWallet: () => createWallet,
   decodeTxInputData: () => decodeTxInputData,
-  etardev: () => etardev_exports
+  etardev: () => etardev_exports,
+  ethToGwei: () => ethToGwei,
+  ethToWei: () => ethToWei,
+  gweiToEth: () => gweiToEth,
+  gweiToWei: () => gweiToWei,
+  weiToEth: () => weiToEth,
+  weiToGwei: () => weiToGwei
 });
 module.exports = __toCommonJS(index_exports);
 
@@ -50,7 +56,13 @@ __export(etardev_exports, {
   checkRpcUrl: () => checkRpcUrl,
   createProvider: () => createProvider,
   createWallet: () => createWallet,
-  decodeTxInputData: () => decodeTxInputData
+  decodeTxInputData: () => decodeTxInputData,
+  ethToGwei: () => ethToGwei,
+  ethToWei: () => ethToWei,
+  gweiToEth: () => gweiToEth,
+  gweiToWei: () => gweiToWei,
+  weiToEth: () => weiToEth,
+  weiToGwei: () => weiToGwei
 });
 
 // src/tools/provider/createProvider.ts
@@ -264,6 +276,51 @@ function formatValue(param, value) {
   }
   return value;
 }
+
+// src/tools/convert/ethConvert.ts
+var import_ethers7 = require("ethers");
+var ethToGwei = (eth) => {
+  try {
+    return import_ethers7.ethers.parseUnits(eth.toString(), "gwei").toString();
+  } catch (error) {
+    return "Error converting ETH to GWEI";
+  }
+};
+var ethToWei = (eth) => {
+  try {
+    return import_ethers7.ethers.parseEther(eth.toString()).toString();
+  } catch (error) {
+    return "Error converting ETH to WEI";
+  }
+};
+var gweiToEth = (gwei) => {
+  try {
+    return import_ethers7.ethers.formatUnits(gwei.toString(), "gwei");
+  } catch (error) {
+    return "Error converting GWEI to ETH";
+  }
+};
+var gweiToWei = (gwei) => {
+  try {
+    return import_ethers7.ethers.parseUnits(gwei.toString(), "gwei").toString();
+  } catch (error) {
+    return "Error converting GWEI to WEI";
+  }
+};
+var weiToEth = (wei) => {
+  try {
+    return import_ethers7.ethers.formatUnits(wei.toString(), "ether");
+  } catch (error) {
+    return "Error converting WEI to ETH";
+  }
+};
+var weiToGwei = (wei) => {
+  try {
+    return import_ethers7.ethers.formatUnits(wei.toString(), "gwei");
+  } catch (error) {
+    return "Error converting WEI to GWEI";
+  }
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   checkABI,
@@ -273,5 +330,11 @@ function formatValue(param, value) {
   createProvider,
   createWallet,
   decodeTxInputData,
-  etardev
+  etardev,
+  ethToGwei,
+  ethToWei,
+  gweiToEth,
+  gweiToWei,
+  weiToEth,
+  weiToGwei
 });
