@@ -6,4 +6,5 @@ export type responseType = {
   rpcProtocolType?: string;
   provider?: Provider;
   wallets?: HDNodeWallet[] | Wallet[];
+  transactions?: Array<object>;
 };

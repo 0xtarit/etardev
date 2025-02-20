@@ -1,4 +1,10 @@
 var __defProp = Object.defineProperty;
+var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+}) : x)(function(x) {
+  if (typeof require !== "undefined") return require.apply(this, arguments);
+  throw Error('Dynamic require of "' + x + '" is not supported');
+});
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -12,12 +18,14 @@ __export(etardev_exports, {
   checkPrivatekey: () => checkPrivatekey,
   checkRpcUrl: () => checkRpcUrl,
   createProvider: () => createProvider,
+  createTx: () => createTx,
   createWallet: () => createWallet,
   decodeTxInputData: () => decodeTxInputData,
   ethToGwei: () => ethToGwei,
   ethToWei: () => ethToWei,
   gweiToEth: () => gweiToEth,
   gweiToWei: () => gweiToWei,
+  isValidEtherValue: () => isValidEtherValue,
   weiToEth: () => weiToEth,
   weiToGwei: () => weiToGwei
 });
@@ -234,49 +242,137 @@ function formatValue(param, value) {
   return value;
 }
 
+// src/tools/transaction/createTx.ts
+import { isAddress, isHexString as isHexString2, Interface as Interface3 } from "ethers";
+
+// src/tools/transaction/check.ts
+var { ethers: ethers6 } = __require("ethers");
+function isValidEtherValue(value) {
+  try {
+    const ethValue = ethers6.parseEther(value.toString());
+    if (ethValue > 0n) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
 // src/tools/convert/ethConvert.ts
-import { ethers as ethers6 } from "ethers";
+import { ethers as ethers7 } from "ethers";
 var ethToGwei = (eth) => {
   try {
-    return ethers6.parseUnits(eth.toString(), "gwei").toString();
+    return ethers7.parseUnits(eth.toString(), "gwei").toString();
   } catch (error) {
     return "Error converting ETH to GWEI";
   }
 };
 var ethToWei = (eth) => {
   try {
-    return ethers6.parseEther(eth.toString()).toString();
+    return ethers7.parseEther(eth.toString()).toString();
   } catch (error) {
     return "Error converting ETH to WEI";
   }
 };
 var gweiToEth = (gwei) => {
   try {
-    return ethers6.formatUnits(gwei.toString(), "gwei");
+    return ethers7.formatUnits(gwei.toString(), "gwei");
   } catch (error) {
     return "Error converting GWEI to ETH";
   }
 };
 var gweiToWei = (gwei) => {
   try {
-    return ethers6.parseUnits(gwei.toString(), "gwei").toString();
+    return ethers7.parseUnits(gwei.toString(), "gwei").toString();
   } catch (error) {
     return "Error converting GWEI to WEI";
   }
 };
 var weiToEth = (wei) => {
   try {
-    return ethers6.formatUnits(wei.toString(), "ether");
+    return ethers7.formatUnits(wei.toString(), "ether");
   } catch (error) {
     return "Error converting WEI to ETH";
   }
 };
 var weiToGwei = (wei) => {
   try {
-    return ethers6.formatUnits(wei.toString(), "gwei");
+    return ethers7.formatUnits(wei.toString(), "gwei");
   } catch (error) {
     return "Error converting WEI to GWEI";
   }
+};
+
+// src/tools/transaction/createTx.ts
+var allowedParams = ["gasLimit", "gasPrice", "nonce", "chainId", "from", "v", "r", "s", "maxPriorityFeePerGas", "maxFeePerGas", "accessList", "type"];
+var createTx = (txDetails) => {
+  let createdTxObject = [];
+  if (!Array.isArray(txDetails)) return { status: false, message: "Invalid transaction details." };
+  for (const tx_object of txDetails) {
+    let addGivenParams2 = function() {
+      allowedParams.forEach((param) => {
+        if (param in tx_object) {
+          if (["gasPrice", "maxPriorityFeePerGas", "maxFeePerGas"].includes(param)) {
+            txObject[param] = gweiToWei(tx_object[param]);
+          } else {
+            txObject[param] = tx_object[param];
+          }
+        }
+      });
+    };
+    var addGivenParams = addGivenParams2;
+    let txObject = {};
+    if (!("to" in tx_object)) {
+      return { status: false, message: "Transaction recipient is required." };
+    }
+    if (!isAddress(tx_object.to)) {
+      return { status: false, message: `Invalid Ethereum address "to".` };
+    }
+    if (!("data" in tx_object || "value" in tx_object)) {
+      return { status: false, message: "Transaction must include either 'data' or 'value'." };
+    }
+    if ("value" in tx_object && isValidEtherValue(tx_object.value) && !("data" in tx_object)) {
+      txObject = {
+        to: tx_object.to,
+        value: ethToWei(tx_object.value)
+      };
+      addGivenParams2();
+    } else if ("data" in tx_object && isHexString2(tx_object.data)) {
+      txObject = {
+        to: tx_object.to,
+        data: tx_object.data
+      };
+      if ("value" in tx_object && isValidEtherValue(tx_object.value)) {
+        txObject.value = ethToWei(tx_object.value);
+      }
+      addGivenParams2();
+    } else if ("data" in tx_object && !isHexString2(tx_object.data)) {
+      if (!checkABI(tx_object.abi).status) {
+        return { status: false, message: "Invalid ABI." };
+      }
+      try {
+        const iface = new Interface3(tx_object.abi);
+        const encodedData = iface.encodeFunctionData(tx_object.data.function, tx_object.data.parameters);
+        txObject = {
+          to: tx_object.to,
+          data: encodedData
+        };
+        if ("value" in tx_object && isValidEtherValue(tx_object.value)) {
+          txObject.value = ethToWei(tx_object.value);
+        }
+        addGivenParams2();
+      } catch (error) {
+        return { status: false, message: `Please provide valid abi and data. ${error}` };
+      }
+    } else {
+      return { status: false, message: "Invalid transaction details." };
+    }
+    createdTxObject.push(txObject);
+  }
+  ;
+  return { status: true, message: "Transaction created successfully.", transactions: createdTxObject };
 };
 export {
   checkABI,
@@ -284,6 +380,7 @@ export {
   checkPrivatekey,
   checkRpcUrl,
   createProvider,
+  createTx,
   createWallet,
   decodeTxInputData,
   etardev_exports as etardev,
@@ -291,6 +388,7 @@ export {
   ethToWei,
   gweiToEth,
   gweiToWei,
+  isValidEtherValue,
   weiToEth,
   weiToGwei
 };

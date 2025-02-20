@@ -35,6 +35,7 @@ __export(index_exports, {
   checkPrivatekey: () => checkPrivatekey,
   checkRpcUrl: () => checkRpcUrl,
   createProvider: () => createProvider,
+  createTx: () => createTx,
   createWallet: () => createWallet,
   decodeTxInputData: () => decodeTxInputData,
   etardev: () => etardev_exports,
@@ -42,6 +43,7 @@ __export(index_exports, {
   ethToWei: () => ethToWei,
   gweiToEth: () => gweiToEth,
   gweiToWei: () => gweiToWei,
+  isValidEtherValue: () => isValidEtherValue,
   weiToEth: () => weiToEth,
   weiToGwei: () => weiToGwei
 });
@@ -55,12 +57,14 @@ __export(etardev_exports, {
   checkPrivatekey: () => checkPrivatekey,
   checkRpcUrl: () => checkRpcUrl,
   createProvider: () => createProvider,
+  createTx: () => createTx,
   createWallet: () => createWallet,
   decodeTxInputData: () => decodeTxInputData,
   ethToGwei: () => ethToGwei,
   ethToWei: () => ethToWei,
   gweiToEth: () => gweiToEth,
   gweiToWei: () => gweiToWei,
+  isValidEtherValue: () => isValidEtherValue,
   weiToEth: () => weiToEth,
   weiToGwei: () => weiToGwei
 });
@@ -277,6 +281,24 @@ function formatValue(param, value) {
   return value;
 }
 
+// src/tools/transaction/createTx.ts
+var import_ethers8 = require("ethers");
+
+// src/tools/transaction/check.ts
+var { ethers: ethers6 } = require("ethers");
+function isValidEtherValue(value) {
+  try {
+    const ethValue = ethers6.parseEther(value.toString());
+    if (ethValue > 0n) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
 // src/tools/convert/ethConvert.ts
 var import_ethers7 = require("ethers");
 var ethToGwei = (eth) => {
@@ -321,6 +343,76 @@ var weiToGwei = (wei) => {
     return "Error converting WEI to GWEI";
   }
 };
+
+// src/tools/transaction/createTx.ts
+var allowedParams = ["gasLimit", "gasPrice", "nonce", "chainId", "from", "v", "r", "s", "maxPriorityFeePerGas", "maxFeePerGas", "accessList", "type"];
+var createTx = (txDetails) => {
+  let createdTxObject = [];
+  if (!Array.isArray(txDetails)) return { status: false, message: "Invalid transaction details." };
+  for (const tx_object of txDetails) {
+    let addGivenParams2 = function() {
+      allowedParams.forEach((param) => {
+        if (param in tx_object) {
+          if (["gasPrice", "maxPriorityFeePerGas", "maxFeePerGas"].includes(param)) {
+            txObject[param] = gweiToWei(tx_object[param]);
+          } else {
+            txObject[param] = tx_object[param];
+          }
+        }
+      });
+    };
+    var addGivenParams = addGivenParams2;
+    let txObject = {};
+    if (!("to" in tx_object)) {
+      return { status: false, message: "Transaction recipient is required." };
+    }
+    if (!(0, import_ethers8.isAddress)(tx_object.to)) {
+      return { status: false, message: `Invalid Ethereum address "to".` };
+    }
+    if (!("data" in tx_object || "value" in tx_object)) {
+      return { status: false, message: "Transaction must include either 'data' or 'value'." };
+    }
+    if ("value" in tx_object && isValidEtherValue(tx_object.value) && !("data" in tx_object)) {
+      txObject = {
+        to: tx_object.to,
+        value: ethToWei(tx_object.value)
+      };
+      addGivenParams2();
+    } else if ("data" in tx_object && (0, import_ethers8.isHexString)(tx_object.data)) {
+      txObject = {
+        to: tx_object.to,
+        data: tx_object.data
+      };
+      if ("value" in tx_object && isValidEtherValue(tx_object.value)) {
+        txObject.value = ethToWei(tx_object.value);
+      }
+      addGivenParams2();
+    } else if ("data" in tx_object && !(0, import_ethers8.isHexString)(tx_object.data)) {
+      if (!checkABI(tx_object.abi).status) {
+        return { status: false, message: "Invalid ABI." };
+      }
+      try {
+        const iface = new import_ethers8.Interface(tx_object.abi);
+        const encodedData = iface.encodeFunctionData(tx_object.data.function, tx_object.data.parameters);
+        txObject = {
+          to: tx_object.to,
+          data: encodedData
+        };
+        if ("value" in tx_object && isValidEtherValue(tx_object.value)) {
+          txObject.value = ethToWei(tx_object.value);
+        }
+        addGivenParams2();
+      } catch (error) {
+        return { status: false, message: `Please provide valid abi and data. ${error}` };
+      }
+    } else {
+      return { status: false, message: "Invalid transaction details." };
+    }
+    createdTxObject.push(txObject);
+  }
+  ;
+  return { status: true, message: "Transaction created successfully.", transactions: createdTxObject };
+};
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   checkABI,
@@ -328,6 +420,7 @@ var weiToGwei = (wei) => {
   checkPrivatekey,
   checkRpcUrl,
   createProvider,
+  createTx,
   createWallet,
   decodeTxInputData,
   etardev,
@@ -335,6 +428,7 @@ var weiToGwei = (wei) => {
   ethToWei,
   gweiToEth,
   gweiToWei,
+  isValidEtherValue,
   weiToEth,
   weiToGwei
 });
