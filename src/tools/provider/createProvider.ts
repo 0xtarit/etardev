@@ -23,7 +23,6 @@ const setProvider = async ( _rpcUrl: string, _rpcUrlType: string ): Promise<resp
     // First, check if provider can detect network
     try {
       const network = await provider.getNetwork();
-      console.log(`Connected to network: ${network.name} (chainId: ${network.chainId})`);
     } catch (error: any) {
       return { status: false, message: `Invalid network: ${error.message}` };
     }

@@ -99,7 +99,6 @@ var setProvider = async (_rpcUrl, _rpcUrlType) => {
     }
     try {
       const network = await provider.getNetwork();
-      console.log(`Connected to network: ${network.name} (chainId: ${network.chainId})`);
     } catch (error) {
       return { status: false, message: `Invalid network: ${error.message}` };
     }

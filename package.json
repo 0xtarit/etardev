@@ -2,7 +2,7 @@
   "author": "0xtarit",
   "name": "etardev",
   "license": "MIT",
-  "version": "0.0.3",
+  "version": "0.0.1",
   "type": "module",
   "description": "Etardev is an NPM package designed to streamline development for Web3, Ethers.js, and blockchain projects.",
   "main": "./dist/index.cjs",
