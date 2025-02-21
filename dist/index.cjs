@@ -44,6 +44,7 @@ __export(index_exports, {
   gweiToEth: () => gweiToEth,
   gweiToWei: () => gweiToWei,
   isValidEtherValue: () => isValidEtherValue,
+  validateEnvVariables: () => validateEnvVariables,
   weiToEth: () => weiToEth,
   weiToGwei: () => weiToGwei
 });
@@ -65,6 +66,7 @@ __export(etardev_exports, {
   gweiToEth: () => gweiToEth,
   gweiToWei: () => gweiToWei,
   isValidEtherValue: () => isValidEtherValue,
+  validateEnvVariables: () => validateEnvVariables,
   weiToEth: () => weiToEth,
   weiToGwei: () => weiToGwei
 });
@@ -413,6 +415,44 @@ var createTx = (txDetails) => {
   ;
   return { status: true, message: "Transaction created successfully.", transactions: createdTxObject };
 };
+
+// src/tools/convert/validateEnvVariables.ts
+var import_dotenv = require("dotenv");
+var import_ethers9 = require("ethers");
+(0, import_dotenv.config)();
+async function validateEnvVariables(validations) {
+  if (!Array.isArray(validations)) {
+    throw new Error("Invalid validations array: Must be a valid array.");
+  }
+  const result = {};
+  for (const { name, type } of validations) {
+    const value = process.env[name] || null;
+    result[name] = await validateValue(value, type);
+  }
+  return result;
+}
+async function validateValue(value, type) {
+  if (!value) {
+    return { isValid: false, value: null, type };
+  }
+  switch (type) {
+    case "number":
+      return { isValid: !isNaN(Number(value)), value: Number(value), type };
+    case "string":
+      return { isValid: typeof value === "string", value, type };
+    case "boolean":
+      return { isValid: value.toLowerCase() === "true" || value.toLowerCase() === "false", value: value.toLowerCase() === "true", type };
+    case "privateKey":
+      return { isValid: checkPrivatekey(value).status, value, type };
+    case "rpcUrl":
+      const rpcUrlCheckResult = await checkRpcUrl(value);
+      return { isValid: rpcUrlCheckResult.status, value, type };
+    case "address":
+      return { isValid: (0, import_ethers9.isAddress)(value), value, type };
+    default:
+      return { isValid: false, value, type };
+  }
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   checkABI,
@@ -429,6 +469,7 @@ var createTx = (txDetails) => {
   gweiToEth,
   gweiToWei,
   isValidEtherValue,
+  validateEnvVariables,
   weiToEth,
   weiToGwei
 });

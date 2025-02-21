@@ -26,6 +26,7 @@ __export(etardev_exports, {
   gweiToEth: () => gweiToEth,
   gweiToWei: () => gweiToWei,
   isValidEtherValue: () => isValidEtherValue,
+  validateEnvVariables: () => validateEnvVariables,
   weiToEth: () => weiToEth,
   weiToGwei: () => weiToGwei
 });
@@ -374,6 +375,44 @@ var createTx = (txDetails) => {
   ;
   return { status: true, message: "Transaction created successfully.", transactions: createdTxObject };
 };
+
+// src/tools/convert/validateEnvVariables.ts
+import { config } from "dotenv";
+import { isAddress as isAddress2 } from "ethers";
+config();
+async function validateEnvVariables(validations) {
+  if (!Array.isArray(validations)) {
+    throw new Error("Invalid validations array: Must be a valid array.");
+  }
+  const result = {};
+  for (const { name, type } of validations) {
+    const value = process.env[name] || null;
+    result[name] = await validateValue(value, type);
+  }
+  return result;
+}
+async function validateValue(value, type) {
+  if (!value) {
+    return { isValid: false, value: null, type };
+  }
+  switch (type) {
+    case "number":
+      return { isValid: !isNaN(Number(value)), value: Number(value), type };
+    case "string":
+      return { isValid: typeof value === "string", value, type };
+    case "boolean":
+      return { isValid: value.toLowerCase() === "true" || value.toLowerCase() === "false", value: value.toLowerCase() === "true", type };
+    case "privateKey":
+      return { isValid: checkPrivatekey(value).status, value, type };
+    case "rpcUrl":
+      const rpcUrlCheckResult = await checkRpcUrl(value);
+      return { isValid: rpcUrlCheckResult.status, value, type };
+    case "address":
+      return { isValid: isAddress2(value), value, type };
+    default:
+      return { isValid: false, value, type };
+  }
+}
 export {
   checkABI,
   checkMnemonic,
@@ -389,6 +428,7 @@ export {
   gweiToEth,
   gweiToWei,
   isValidEtherValue,
+  validateEnvVariables,
   weiToEth,
   weiToGwei
 };
