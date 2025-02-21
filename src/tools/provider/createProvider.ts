@@ -12,9 +12,9 @@ const setProvider = async ( _rpcUrl: string, _rpcUrlType: string ): Promise<resp
 
   try {
 
-    if (rpcUrlProtocolType === "wss:") {
+    if (rpcUrlProtocolType === "wss") {
       provider = new ethers.WebSocketProvider(_providerRpcUrl);
-    } else if ( rpcUrlProtocolType === "https:" || rpcUrlProtocolType === "http:" ) { 
+    } else if ( rpcUrlProtocolType === "https" || rpcUrlProtocolType === "http" ) { 
       provider = new ethers.JsonRpcProvider(_providerRpcUrl);
     } else {
       return { status: false, message: "Unsupported protocol type." };
