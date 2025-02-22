@@ -4,7 +4,7 @@ import { responseType } from "../import/responseType";
 
 
 // Async function to create a provider and validate its response
-const setProvider = async ( _rpcUrl: string, _rpcUrlType: string ): Promise<responseType> => {
+const setProvider = async ( _rpcUrl: string, _rpcUrlType: string, _byRequestSend: boolean = false): Promise<responseType> => {
   let rpcUrlProtocolType = _rpcUrlType;
   let _providerRpcUrl = _rpcUrl;
 
@@ -18,6 +18,10 @@ const setProvider = async ( _rpcUrl: string, _rpcUrlType: string ): Promise<resp
       provider = new ethers.JsonRpcProvider(_providerRpcUrl);
     } else {
       return { status: false, message: "Unsupported protocol type." };
+    }
+
+    if(!_byRequestSend){
+      return  { status: true, message: `Provider created successful.`, provider }
     }
 
     // First, check if provider can detect network
@@ -46,8 +50,8 @@ const setProvider = async ( _rpcUrl: string, _rpcUrlType: string ): Promise<resp
 };
 
 // Function to create and validate a provider
-const createProvider = async ( _providerRpcUrl: string): Promise<responseType> => {
-  let checkRpcUrlProtocolResult: responseType = await checkRpcUrlProtocol(_providerRpcUrl);
+const createProvider = async ( _providerRpcUrl: string, _byRequestSend: boolean = false): Promise<responseType> => {
+  let checkRpcUrlProtocolResult: responseType = await checkRpcUrlProtocol(_providerRpcUrl, _byRequestSend);
 
   if (!checkRpcUrlProtocolResult.status) return checkRpcUrlProtocolResult;
 
@@ -57,7 +61,7 @@ const createProvider = async ( _providerRpcUrl: string): Promise<responseType> =
     return { status: false, message: "RPC protocol type is undefined." };
   }
 
-  let setProviderResult: responseType = await setProvider(_providerRpcUrl,rpcProtocolType_result);
+  let setProviderResult: responseType = await setProvider(_providerRpcUrl,rpcProtocolType_result, _byRequestSend);
 
   if (setProviderResult.status) {
     return setProviderResult;

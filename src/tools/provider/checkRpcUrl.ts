@@ -5,7 +5,7 @@ import { responseType } from "../import/responseType";
 const SUPPORTED_PROTOCOLS = new Set(["wss", "https", "http"]);
 
 // Function to check the protocol type of an RPC URL
-const checkRpcUrlProtocol = async (_rpcUrl: string): Promise<responseType> => {
+const checkRpcUrlProtocol = async (_rpcUrl: string, _byRequestSend: boolean = false): Promise<responseType> => {
   try {
     const parsedUrl = new URL(_rpcUrl);
     const protocol = parsedUrl.protocol.slice(0, -1);
@@ -15,7 +15,11 @@ const checkRpcUrlProtocol = async (_rpcUrl: string): Promise<responseType> => {
     }
 
     if (!SUPPORTED_PROTOCOLS.has(protocol)) {
-      return { status: false, message: `Unsupported protocol: ${protocol}` };
+      return { status: false, message: `Unsupported protocol: ${protocol}`,  };
+    }
+
+    if (!_byRequestSend){
+      return { status: true, message: `Supported protocol: ${protocol}` , rpcProtocolType: protocol };
     }
 
     try {
@@ -32,9 +36,16 @@ const checkRpcUrlProtocol = async (_rpcUrl: string): Promise<responseType> => {
       });
 
       if (response.status === 200) {
-        return {status: true,message: "RPC URL is valid and accessible.",rpcProtocolType: protocol,};
+        return {
+          status: true,
+          message: "RPC URL is valid and accessible.",
+          rpcProtocolType: protocol,
+        };
       } else {
-        return {status: false, message: `RPC URL not responded with status: ${response.status}`,};
+        return {
+          status: false,
+          message: `RPC URL not responded with status: ${response.status}`,
+        };
       }
     } catch (fetchError) {
       return { status: false, message: "RPC URL is not reachable." };

@@ -9,7 +9,7 @@ type responseType = {
     transactions?: Array<object>;
 };
 
-declare const createProvider: (_providerRpcUrl: string) => Promise<responseType>;
+declare const createProvider: (_providerRpcUrl: string, _byRequestSend?: boolean) => Promise<responseType>;
 
 declare const checkRpcUrl: (_url: string, validateDeep?: boolean) => Promise<responseType>;
 

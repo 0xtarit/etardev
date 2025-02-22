@@ -36,7 +36,7 @@ import { ethers } from "ethers";
 
 // src/tools/provider/checkRpcUrl.ts
 var SUPPORTED_PROTOCOLS = /* @__PURE__ */ new Set(["wss", "https", "http"]);
-var checkRpcUrlProtocol = async (_rpcUrl) => {
+var checkRpcUrlProtocol = async (_rpcUrl, _byRequestSend = false) => {
   try {
     const parsedUrl = new URL(_rpcUrl);
     const protocol = parsedUrl.protocol.slice(0, -1);
@@ -45,6 +45,9 @@ var checkRpcUrlProtocol = async (_rpcUrl) => {
     }
     if (!SUPPORTED_PROTOCOLS.has(protocol)) {
       return { status: false, message: `Unsupported protocol: ${protocol}` };
+    }
+    if (!_byRequestSend) {
+      return { status: true, message: `Supported protocol: ${protocol}`, rpcProtocolType: protocol };
     }
     try {
       const payload = {
@@ -58,9 +61,16 @@ var checkRpcUrlProtocol = async (_rpcUrl) => {
         signal: AbortSignal.timeout(5e3)
       });
       if (response.status === 200) {
-        return { status: true, message: "RPC URL is valid and accessible.", rpcProtocolType: protocol };
+        return {
+          status: true,
+          message: "RPC URL is valid and accessible.",
+          rpcProtocolType: protocol
+        };
       } else {
-        return { status: false, message: `RPC URL not responded with status: ${response.status}` };
+        return {
+          status: false,
+          message: `RPC URL not responded with status: ${response.status}`
+        };
       }
     } catch (fetchError) {
       return { status: false, message: "RPC URL is not reachable." };
@@ -85,7 +95,7 @@ var checkRpcUrl = async (_url, validateDeep) => {
 };
 
 // src/tools/provider/createProvider.ts
-var setProvider = async (_rpcUrl, _rpcUrlType) => {
+var setProvider = async (_rpcUrl, _rpcUrlType, _byRequestSend = false) => {
   let rpcUrlProtocolType = _rpcUrlType;
   let _providerRpcUrl = _rpcUrl;
   let provider = null;
@@ -96,6 +106,9 @@ var setProvider = async (_rpcUrl, _rpcUrlType) => {
       provider = new ethers.JsonRpcProvider(_providerRpcUrl);
     } else {
       return { status: false, message: "Unsupported protocol type." };
+    }
+    if (!_byRequestSend) {
+      return { status: true, message: `Provider created successful.`, provider };
     }
     try {
       const network = await provider.getNetwork();
@@ -112,14 +125,14 @@ var setProvider = async (_rpcUrl, _rpcUrlType) => {
     return { status: false, message: `Error creating provider: ${error.message}` };
   }
 };
-var createProvider = async (_providerRpcUrl) => {
-  let checkRpcUrlProtocolResult = await checkRpcUrlProtocol(_providerRpcUrl);
+var createProvider = async (_providerRpcUrl, _byRequestSend = false) => {
+  let checkRpcUrlProtocolResult = await checkRpcUrlProtocol(_providerRpcUrl, _byRequestSend);
   if (!checkRpcUrlProtocolResult.status) return checkRpcUrlProtocolResult;
   const rpcProtocolType_result = checkRpcUrlProtocolResult.rpcProtocolType;
   if (!rpcProtocolType_result) {
     return { status: false, message: "RPC protocol type is undefined." };
   }
-  let setProviderResult = await setProvider(_providerRpcUrl, rpcProtocolType_result);
+  let setProviderResult = await setProvider(_providerRpcUrl, rpcProtocolType_result, _byRequestSend);
   if (setProviderResult.status) {
     return setProviderResult;
   } else {
